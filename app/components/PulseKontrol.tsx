@@ -492,12 +492,8 @@ export default function PulseKontrol() {
       {/* --- ФОН --- */}
       {/* Темный фон (космический) */}
       <div 
-        className={`fixed z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}
         style={{
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           marginTop: 'calc(-1 * env(safe-area-inset-top))',
@@ -512,12 +508,8 @@ export default function PulseKontrol() {
       
       {/* Светлый фон (глассморфизм) */}
       <div 
-        className={`fixed z-[-2] pointer-events-none transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}
+        className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}
         style={{
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           marginTop: 'calc(-1 * env(safe-area-inset-top))',
