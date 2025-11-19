@@ -367,26 +367,33 @@ export default function PulseKontrol() {
       );
       const ghData = await ghRes.json();
 
-      // Reddit - используем corsproxy.io для обхода блокировок IP Vercel и CORS
-      // Прямые запросы с Vercel блокируются (403), поэтому делаем запрос с клиента через нейтральный прокси
+      // Reddit
       const redditUrl = `https://www.reddit.com/r/${selectedSubreddit}/hot.json?limit=15`;
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(redditUrl)}`;
+      
+      // Используем corsproxy.io как более стабильный прокси
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(redditUrl)}`;
       
       const redditRes = await fetch(proxyUrl);
       
       if (!redditRes.ok) {
         throw new Error(`Reddit fetch failed: ${redditRes.status}`);
       }
-      
-      const redditData = await redditRes.json();
-      const redditPosts = redditData.data?.children
-        ?.map((child: any) => child.data)
-        .filter((post: any) => !post.stickied) // Filter out stickied posts
-        || [];
 
+      const responseText = await redditRes.text();
+      try {
+        const redditData = JSON.parse(responseText);
+        const redditPosts = redditData.data?.children
+          ?.map((child: any) => child.data)
+          .filter((post: any) => !post.stickied) // Filter out stickied posts
+          || [];
+        setRedditPosts(redditPosts);
+      } catch (e) {
+        console.error('Failed to parse Reddit JSON:', responseText.substring(0, 100));
+        throw new Error('Invalid JSON response from Reddit');
+      }
+      
       setHnStories(hnData);
       setGhRepos(ghData.items || []);
-      setRedditPosts(redditPosts);
       setLastRefresh(new Date());
     } catch (err) {
       console.error(err);
