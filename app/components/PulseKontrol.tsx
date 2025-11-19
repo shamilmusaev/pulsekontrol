@@ -278,20 +278,23 @@ export default function PulseKontrol() {
   const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
   const [touchEnd, setTouchEnd] = useState<{x: number, y: number} | null>(null);
 
-  // Управление темой
+  // Управление темой (оптимизировано с requestAnimationFrame)
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      // Установить фон для safe areas в темной теме
-      const bg = theme === 'dewey' ? '#15131D' : '#08090F';
-      document.documentElement.style.backgroundColor = bg;
-      document.body.style.backgroundColor = bg;
-    } else {
-      document.documentElement.classList.remove('dark');
-      // Установить фон для safe areas в светлой теме
-      document.documentElement.style.backgroundColor = '#f8fafc';
-      document.body.style.backgroundColor = '#f8fafc';
-    }
+    // Используем requestAnimationFrame для синхронного обновления DOM
+    requestAnimationFrame(() => {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        // Установить фон для safe areas в темной теме
+        const bg = theme === 'dewey' ? '#15131D' : '#08090F';
+        document.documentElement.style.backgroundColor = bg;
+        document.body.style.backgroundColor = bg;
+      } else {
+        document.documentElement.classList.remove('dark');
+        // Установить фон для safe areas в светлой теме
+        document.documentElement.style.backgroundColor = '#f8fafc';
+        document.body.style.backgroundColor = '#f8fafc';
+      }
+    });
   }, [isDark, theme]);
 
   // Update current time every minute for "time ago" display
@@ -408,54 +411,72 @@ export default function PulseKontrol() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    
     try {
-      // HN
-      const hnTopIdsRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
-      const hnTopIds = await hnTopIdsRes.json();
-      const top20Ids = hnTopIds.slice(0, 15);
-      const hnData = await Promise.all(top20Ids.map((id: number) => 
-        fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
-      ));
+      // Параллельная загрузка всех источников данных
+      const [hnResult, ghResult, redditResult] = await Promise.allSettled([
+        // Hacker News
+        (async () => {
+          const hnTopIdsRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+          const hnTopIds = await hnTopIdsRes.json();
+          const top20Ids = hnTopIds.slice(0, 15);
+          return Promise.all(top20Ids.map((id: number) => 
+            fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
+          ));
+        })(),
+        
+        // GitHub
+        (async () => {
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const dateString = oneWeekAgo.toISOString().split('T')[0];
+          const ghRes = await fetch(
+            `https://api.github.com/search/repositories?q=created:>${dateString}&sort=stars&order=desc&per_page=15`
+          );
+          const ghData = await ghRes.json();
+          return ghData.items || [];
+        })(),
+        
+        // Reddit
+        (async () => {
+          const redditUrl = `https://www.reddit.com/r/${selectedSubreddit}/hot.json?limit=15`;
+          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(redditUrl)}`;
+          const redditRes = await fetch(proxyUrl);
+          
+          if (!redditRes.ok) {
+            throw new Error(`Reddit fetch failed: ${redditRes.status}`);
+          }
 
-      // GitHub
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      const dateString = oneWeekAgo.toISOString().split('T')[0];
-      const ghRes = await fetch(
-        `https://api.github.com/search/repositories?q=created:>${dateString}&sort=stars&order=desc&per_page=15`
-      );
-      const ghData = await ghRes.json();
+          const responseText = await redditRes.text();
+          const redditData = JSON.parse(responseText);
+          return redditData.data?.children
+            ?.map((child: any) => child.data)
+            .filter((post: any) => !post.stickied) || [];
+        })()
+      ]);
 
-      // Reddit
-      const redditUrl = `https://www.reddit.com/r/${selectedSubreddit}/hot.json?limit=15`;
-      
-      // Используем corsproxy.io как более стабильный прокси
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(redditUrl)}`;
-      
-      const redditRes = await fetch(proxyUrl);
-      
-      if (!redditRes.ok) {
-        throw new Error(`Reddit fetch failed: ${redditRes.status}`);
+      // Обновляем состояние по мере получения данных (инкрементально)
+      if (hnResult.status === 'fulfilled') {
+        setHnStories(hnResult.value);
+      } else {
+        console.error('HN fetch failed:', hnResult.reason);
       }
 
-      const responseText = await redditRes.text();
-      try {
-        const redditData = JSON.parse(responseText);
-        const redditPosts = redditData.data?.children
-          ?.map((child: any) => child.data)
-          .filter((post: any) => !post.stickied) // Filter out stickied posts
-          || [];
-        setRedditPosts(redditPosts);
-      } catch (e) {
-        console.error('Failed to parse Reddit JSON:', responseText.substring(0, 100));
-        throw new Error('Invalid JSON response from Reddit');
+      if (ghResult.status === 'fulfilled') {
+        setGhRepos(ghResult.value);
+      } else {
+        console.error('GitHub fetch failed:', ghResult.reason);
       }
-      
-      setHnStories(hnData);
-      setGhRepos(ghData.items || []);
+
+      if (redditResult.status === 'fulfilled') {
+        setRedditPosts(redditResult.value);
+      } else {
+        console.error('Reddit fetch failed:', redditResult.reason);
+      }
+
       setLastRefresh(new Date());
     } catch (err) {
-      console.error(err);
+      console.error('Unexpected error:', err);
     } finally {
       setLoading(false);
     }
@@ -612,14 +633,14 @@ export default function PulseKontrol() {
   }, [loading, hnStories, ghRepos, redditPosts, selectedSubreddit, isSubredditMenuOpen, theme]);
 
   return (
-    <div className={`min-h-screen min-h-[100dvh] w-full font-sans selection:bg-blue-500/30 relative transition-colors duration-500 ${isDark ? 'text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
+    <div className={`min-h-screen min-h-[100dvh] w-full font-sans selection:bg-blue-500/30 relative transition-colors duration-150 ${isDark ? 'text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
       
       <style>{flickerStyle}</style>
 
       {/* --- ФОН --- */}
       {/* Фон для темы Dewey (Deep Purple) */}
       <div 
-        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#15131D] transition-opacity duration-500 ${theme === 'dewey' ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#15131D] transition-opacity duration-150 will-change-opacity ${theme === 'dewey' ? 'opacity-100' : 'opacity-0'}`}
         style={{
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -633,7 +654,7 @@ export default function PulseKontrol() {
 
       {/* Темный фон (космический) - стандартный Dark Mode */}
       <div 
-        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-150 will-change-opacity ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}
         style={{
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -649,7 +670,7 @@ export default function PulseKontrol() {
       
       {/* Светлый фон (глассморфизм) */}
       <div 
-        className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-500 ${theme === 'light' ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-150 will-change-opacity ${theme === 'light' ? 'opacity-100' : 'opacity-0'}`}
         style={{
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
