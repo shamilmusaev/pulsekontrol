@@ -581,45 +581,45 @@ export default function PulseKontrol() {
           {/* Мобильная навигация и контролы */}
           <div className="flex md:hidden items-center justify-between gap-3">
             {/* Мобильная навигация */}
-            <div className="flex items-center gap-4 text-[10px] font-bold tracking-[0.15em] uppercase overflow-x-auto scrollbar-hide flex-1">
+            <div className="flex items-center gap-5 text-sm font-bold tracking-wider uppercase overflow-x-auto scrollbar-hide flex-1">
               <button 
                 onClick={() => setActiveTab('all')}
-                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                className={`flex items-center gap-2 transition-colors whitespace-nowrap p-1.5 -m-1.5
                   ${activeTab === 'all' 
                     ? 'text-blue-500 dark:text-blue-500' 
                     : 'text-slate-500 dark:text-slate-500'}`}
               >
-                <LayoutDashboard className="w-3 h-3" />
+                <LayoutDashboard className="w-4 h-4" />
                 <span className="hidden sm:inline">All</span>
               </button>
               <button 
                 onClick={() => setActiveTab('hn')}
-                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                className={`flex items-center gap-2 transition-colors whitespace-nowrap p-1.5 -m-1.5
                   ${activeTab === 'hn' 
                     ? 'text-blue-500 dark:text-blue-500' 
                     : 'text-slate-500 dark:text-slate-500'}`}
               >
-                <FaHackerNews className="w-3 h-3" />
+                <FaHackerNews className="w-4 h-4" />
                 <span className="hidden sm:inline">HN</span>
               </button>
               <button 
                 onClick={() => setActiveTab('gh')}
-                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                className={`flex items-center gap-2 transition-colors whitespace-nowrap p-1.5 -m-1.5
                   ${activeTab === 'gh' 
                     ? 'text-blue-500 dark:text-blue-500' 
                     : 'text-slate-500 dark:text-slate-500'}`}
               >
-                <FaGithub className="w-3 h-3" />
+                <FaGithub className="w-4 h-4" />
                 <span className="hidden sm:inline">GH</span>
               </button>
               <button 
                 onClick={() => setActiveTab('reddit')}
-                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                className={`flex items-center gap-2 transition-colors whitespace-nowrap p-1.5 -m-1.5
                   ${activeTab === 'reddit' 
                     ? 'text-blue-500 dark:text-blue-500' 
                     : 'text-slate-500 dark:text-slate-500'}`}
               >
-                <FaReddit className="w-3 h-3" />
+                <FaReddit className="w-4 h-4" />
                 <span className="hidden sm:inline">RD</span>
               </button>
             </div>
@@ -628,22 +628,22 @@ export default function PulseKontrol() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={fetchData}
-                className="p-2 rounded-full dark:bg-[#1A1B26]/80 dark:border-white/5 border-slate-200 bg-white/70 hover:bg-blue-500 hover:text-white transition-all shadow-lg backdrop-blur-sm border"
+                className="p-2.5 rounded-full dark:bg-[#1A1B26]/80 dark:border-white/5 border-slate-200 bg-white/70 hover:bg-blue-500 hover:text-white transition-all shadow-lg backdrop-blur-sm border"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
 
               <button 
                 onClick={toggleTheme}
                 className={`
-                  p-2 rounded-full 
+                  p-2.5 rounded-full 
                   dark:bg-[#1A1B26]/80 dark:border-white/5 bg-white/70 border border-slate-200 
                   backdrop-blur-sm shadow-md transition-all
                   ${isFlickering ? 'animate-flicker' : ''}
                 `}
               >
                 <div className={`
-                  w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] transition-colors duration-300
+                  w-3 h-3 rounded-full shadow-[0_0_8px_currentColor] transition-colors duration-300
                   ${isDark ? 'bg-yellow-500' : 'bg-blue-600'}
                 `}></div>
               </button>
