@@ -222,6 +222,10 @@ export default function PulseKontrol() {
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
+  // Touch/Swipe State
+  const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
+  const [touchEnd, setTouchEnd] = useState<{x: number, y: number} | null>(null);
+
   // Управление темой (исправлено)
   useEffect(() => {
     if (isDark) {
@@ -297,6 +301,51 @@ export default function PulseKontrol() {
     setDraggedColumn(null);
     setDragOverColumn(null);
   }, []);
+
+  // Swipe Handlers
+  const minSwipeDistance = 50;
+  const tabs = ['all', 'hn', 'gh', 'reddit'];
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null); // Reset touch end
+    setTouchStart({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY
+    });
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY
+    });
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distanceX = touchStart.x - touchEnd.x;
+    const distanceY = touchStart.y - touchEnd.y;
+    const isLeftSwipe = distanceX > minSwipeDistance;
+    const isRightSwipe = distanceX < -minSwipeDistance;
+    
+    // Check if it's mostly horizontal swipe (to allow vertical scrolling)
+    if (Math.abs(distanceX) > Math.abs(distanceY)) {
+      const currentIndex = tabs.indexOf(activeTab);
+      
+      if (isLeftSwipe) {
+        // Next tab
+        if (currentIndex < tabs.length - 1) {
+          setActiveTab(tabs[currentIndex + 1]);
+        }
+      } else if (isRightSwipe) {
+        // Previous tab
+        if (currentIndex > 0) {
+          setActiveTab(tabs[currentIndex - 1]);
+        }
+      }
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -719,7 +768,13 @@ export default function PulseKontrol() {
       </header>
 
       {/* Основной контент */}
-      <main className="px-4 md:px-10 pb-4 md:pb-10 max-w-[1800px] mx-auto min-h-[calc(100vh-200px)] md:h-[calc(100vh-140px)] md:min-h-[600px] safe-area-bottom" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+      <main 
+        className="px-4 md:px-10 pb-4 md:pb-10 max-w-[1800px] mx-auto min-h-[calc(100vh-200px)] md:h-[calc(100vh-140px)] md:min-h-[600px] safe-area-bottom" 
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div className={`grid grid-cols-1 gap-6 h-full transition-all duration-500
           ${activeTab === 'all' ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'}
         `}>
