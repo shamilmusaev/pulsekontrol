@@ -218,8 +218,8 @@ export default function PulseKontrol() {
       );
       const ghData = await ghRes.json();
 
-      // Reddit - direct client-side fetch to avoid 403 on Vercel
-      const redditRes = await fetch(`https://www.reddit.com/r/${selectedSubreddit}/hot.json?limit=15`);
+      // Reddit - via API proxy with better headers
+      const redditRes = await fetch(`/api/reddit?subreddit=${selectedSubreddit}`);
       const redditData = await redditRes.json();
       const redditPosts = redditData.data?.children
         ?.map((child: any) => child.data)
