@@ -209,18 +209,8 @@ export default function PulseKontrol() {
       );
       const ghData = await ghRes.json();
 
-      // Reddit - клиентский запрос (Reddit блокирует серверные запросы с Vercel)
-      const redditRes = await fetch(`https://www.reddit.com/r/${selectedSubreddit}/hot.json?limit=15`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!redditRes.ok) {
-        throw new Error(`Reddit API error: ${redditRes.status}`);
-      }
-
+      // Reddit
+      const redditRes = await fetch(`/api/reddit?subreddit=${selectedSubreddit}`);
       const redditData = await redditRes.json();
       const redditPosts = redditData.data?.children
         ?.map((child: any) => child.data)
@@ -231,17 +221,8 @@ export default function PulseKontrol() {
       setGhRepos(ghData.items || []);
       setRedditPosts(redditPosts);
       setLastRefresh(new Date());
-    } catch (err: any) {
-      console.error('Error fetching data:', err);
-      // Если ошибка только с Reddit, продолжаем показывать HN и GitHub данные
-      if (err?.message?.includes('Reddit')) {
-        console.warn('Reddit data unavailable, continuing with other sources');
-        // Устанавливаем пустой массив для Reddit, но не прерываем загрузку других данных
-        setRedditPosts([]);
-      } else {
-        // Для других ошибок логируем, но не прерываем работу
-        console.error('Error fetching data:', err);
-      }
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
