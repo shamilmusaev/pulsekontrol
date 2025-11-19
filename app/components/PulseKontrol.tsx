@@ -8,7 +8,10 @@ import {
   ExternalLink, 
   Zap,
   LayoutDashboard,
-  ChevronDown
+  ChevronDown,
+  Github,
+  Newspaper,
+  MessageSquare
 } from 'lucide-react';
 
 // --- Стили для анимации мерцания (Broken Bulb) ---
@@ -58,7 +61,7 @@ const ListItem = ({ rank, title, subtitle, metadata, url, isActive, type = "neut
       target="_blank"
       rel="noopener noreferrer"
       className={`
-        group flex items-start gap-4 p-4 rounded-xl transition-all duration-300
+        group flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-xl transition-all duration-300
         relative overflow-hidden border
         dark:hover:bg-white/[0.03] hover:bg-slate-100/70
         ${isActive 
@@ -114,7 +117,7 @@ const ListItem = ({ rank, title, subtitle, metadata, url, isActive, type = "neut
         </div>
 
         {/* Metadata */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 font-medium">
           {metadata}
         </div>
       </div>
@@ -292,6 +295,7 @@ export default function PulseKontrol() {
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
                 </span>
               )}
+              <Newspaper className="w-3 h-3" />
               Hacker News
             </button>
 
@@ -309,6 +313,7 @@ export default function PulseKontrol() {
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
                 </span>
               )}
+              <Github className="w-3 h-3" />
               Github Live
             </button>
 
@@ -326,6 +331,7 @@ export default function PulseKontrol() {
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
                 </span>
               )}
+              <MessageSquare className="w-3 h-3" />
               Reddit
             </button>
           </div>
@@ -395,7 +401,7 @@ export default function PulseKontrol() {
       {/* Основной контент */}
       <main className="px-4 md:px-10 pb-10 max-w-[1800px] mx-auto h-[calc(100vh-140px)] min-h-[600px]">
         <div className={`grid grid-cols-1 gap-6 h-full transition-all duration-500
-          ${activeTab === 'all' ? 'md:grid-cols-3' : 'md:grid-cols-1'}
+          ${activeTab === 'all' ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'}
         `}>
           
           {/* Hacker News Panel */}
