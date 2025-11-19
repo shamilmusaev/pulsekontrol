@@ -226,8 +226,14 @@ export default function PulseKontrol() {
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
+      // Установить фон для safe areas в темной теме
+      document.documentElement.style.backgroundColor = '#08090F';
+      document.body.style.backgroundColor = '#08090F';
     } else {
       document.documentElement.classList.remove('dark');
+      // Установить фон для safe areas в светлой теме
+      document.documentElement.style.backgroundColor = '#f8fafc';
+      document.body.style.backgroundColor = '#f8fafc';
     }
   }, [isDark]);
 
@@ -485,7 +491,19 @@ export default function PulseKontrol() {
 
       {/* --- ФОН --- */}
       {/* Темный фон (космический) */}
-      <div className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div 
+        className={`fixed z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}
+        style={{
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          marginTop: 'calc(-1 * env(safe-area-inset-top))',
+          marginBottom: 'calc(-1 * env(safe-area-inset-bottom))',
+        }}
+      >
         <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vh] rounded-full bg-[#1d4ed8] opacity-[0.15] blur-[120px] mix-blend-screen" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vh] rounded-full bg-[#7e22ce] opacity-[0.1] blur-[100px] mix-blend-screen" />
         <div className="absolute top-[30%] left-[40%] w-[30vw] h-[30vh] rounded-full bg-[#3b82f6] opacity-[0.05] blur-[150px]" />
@@ -493,7 +511,19 @@ export default function PulseKontrol() {
       </div>
       
       {/* Светлый фон (глассморфизм) */}
-      <div className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div 
+        className={`fixed z-[-2] pointer-events-none transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}
+        style={{
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          marginTop: 'calc(-1 * env(safe-area-inset-top))',
+          marginBottom: 'calc(-1 * env(safe-area-inset-bottom))',
+        }}
+      >
          {/* Мягкий фон для глассморфизма */}
          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-slate-100/80 to-purple-50/80" />
          {/* Размытые "пятна" для эффекта глубины */}

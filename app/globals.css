@@ -14,6 +14,8 @@
 html {
   height: 100%;
   height: -webkit-fill-available;
+  /* Для iOS Safari - фон должен заполнять safe areas */
+  background-color: #08090F;
 }
 
 body {
@@ -22,6 +24,10 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   min-height: 100%;
   min-height: -webkit-fill-available;
+  width: 100%;
+  overflow-x: hidden;
+  /* Заполнить safe areas */
+  background-color: inherit;
 }
 
 /* Hide scrollbar but keep functionality */
