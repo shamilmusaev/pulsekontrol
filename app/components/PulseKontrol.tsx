@@ -367,8 +367,17 @@ export default function PulseKontrol() {
       );
       const ghData = await ghRes.json();
 
-      // Reddit - via API proxy with better headers
-      const redditRes = await fetch(`/api/reddit?subreddit=${selectedSubreddit}`);
+      // Reddit - используем corsproxy.io для обхода блокировок IP Vercel и CORS
+      // Прямые запросы с Vercel блокируются (403), поэтому делаем запрос с клиента через нейтральный прокси
+      const redditUrl = `https://www.reddit.com/r/${selectedSubreddit}/hot.json?limit=15`;
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(redditUrl)}`;
+      
+      const redditRes = await fetch(proxyUrl);
+      
+      if (!redditRes.ok) {
+        throw new Error(`Reddit fetch failed: ${redditRes.status}`);
+      }
+      
       const redditData = await redditRes.json();
       const redditPosts = redditData.data?.children
         ?.map((child: any) => child.data)
