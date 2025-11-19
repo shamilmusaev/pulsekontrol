@@ -8,11 +8,9 @@ import {
   ExternalLink, 
   Zap,
   LayoutDashboard,
-  ChevronDown,
-  Github,
-  Newspaper,
-  MessageSquare
+  ChevronDown
 } from 'lucide-react';
+import { FaHackerNews, FaGithub, FaReddit } from 'react-icons/fa';
 
 // --- Стили для анимации мерцания (Broken Bulb) ---
 const flickerStyle = `
@@ -232,18 +230,18 @@ export default function PulseKontrol() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 600000);
+    const interval = setInterval(fetchData, 3600000); // 1 hour = 3600000 ms
     return () => clearInterval(interval);
   }, [fetchData]);
 
   return (
-    <div className={`min-h-screen w-full font-sans selection:bg-blue-500/30 relative transition-colors duration-500 ${isDark ? 'text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
+    <div className={`min-h-screen min-h-[100dvh] w-full font-sans selection:bg-blue-500/30 relative transition-colors duration-500 ${isDark ? 'text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
       
       <style>{flickerStyle}</style>
 
       {/* --- ФОН --- */}
       {/* Темный фон (космический) */}
-      <div className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vh] rounded-full bg-[#1d4ed8] opacity-[0.15] blur-[120px] mix-blend-screen" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vh] rounded-full bg-[#7e22ce] opacity-[0.1] blur-[100px] mix-blend-screen" />
         <div className="absolute top-[30%] left-[40%] w-[30vw] h-[30vh] rounded-full bg-[#3b82f6] opacity-[0.05] blur-[150px]" />
@@ -251,7 +249,7 @@ export default function PulseKontrol() {
       </div>
       
       {/* Светлый фон (глассморфизм) */}
-      <div className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
          {/* Мягкий фон для глассморфизма */}
          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-slate-100/80 to-purple-50/80" />
          {/* Размытые "пятна" для эффекта глубины */}
@@ -260,11 +258,11 @@ export default function PulseKontrol() {
       </div>
 
       {/* 5.1 Хедер */}
-      <header className="pt-8 pb-6 px-6 md:px-10 max-w-[1800px] mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="pt-4 md:pt-8 pb-4 md:pb-6 px-4 md:px-10 max-w-[1800px] mx-auto safe-area-top">
+        <div className="flex flex-col gap-4">
           
-          {/* Навигация слева (Теперь это полноценные кнопки/табы) */}
-          <div className="flex items-center gap-8 text-[11px] font-bold tracking-[0.15em] uppercase overflow-x-auto scrollbar-hide">
+          {/* Навигация слева (Desktop) */}
+          <div className="hidden md:flex items-center gap-8 text-[11px] font-bold tracking-[0.15em] uppercase overflow-x-auto scrollbar-hide">
             
             {/* Кнопка ALL (Dashboard) */}
              <button 
@@ -295,7 +293,7 @@ export default function PulseKontrol() {
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
                 </span>
               )}
-              <Newspaper className="w-3 h-3" />
+              <FaHackerNews className="w-3 h-3" />
               Hacker News
             </button>
 
@@ -313,7 +311,7 @@ export default function PulseKontrol() {
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
                 </span>
               )}
-              <Github className="w-3 h-3" />
+              <FaGithub className="w-3 h-3" />
               Github Live
             </button>
 
@@ -331,13 +329,85 @@ export default function PulseKontrol() {
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
                 </span>
               )}
-              <MessageSquare className="w-3 h-3" />
+              <FaReddit className="w-3 h-3" />
               Reddit
             </button>
           </div>
 
-          {/* Статус справа */}
-          <div className="flex items-center gap-6 text-[10px] font-bold tracking-wider uppercase dark:text-slate-500 text-slate-400">
+          {/* Мобильная навигация и контролы */}
+          <div className="flex md:hidden items-center justify-between gap-3">
+            {/* Мобильная навигация */}
+            <div className="flex items-center gap-4 text-[10px] font-bold tracking-[0.15em] uppercase overflow-x-auto scrollbar-hide flex-1">
+              <button 
+                onClick={() => setActiveTab('all')}
+                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                  ${activeTab === 'all' 
+                    ? 'text-blue-500 dark:text-blue-500' 
+                    : 'text-slate-500 dark:text-slate-500'}`}
+              >
+                <LayoutDashboard className="w-3 h-3" />
+                <span className="hidden sm:inline">All</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('hn')}
+                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                  ${activeTab === 'hn' 
+                    ? 'text-blue-500 dark:text-blue-500' 
+                    : 'text-slate-500 dark:text-slate-500'}`}
+              >
+                <FaHackerNews className="w-3 h-3" />
+                <span className="hidden sm:inline">HN</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('gh')}
+                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                  ${activeTab === 'gh' 
+                    ? 'text-blue-500 dark:text-blue-500' 
+                    : 'text-slate-500 dark:text-slate-500'}`}
+              >
+                <FaGithub className="w-3 h-3" />
+                <span className="hidden sm:inline">GH</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('reddit')}
+                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap
+                  ${activeTab === 'reddit' 
+                    ? 'text-blue-500 dark:text-blue-500' 
+                    : 'text-slate-500 dark:text-slate-500'}`}
+              >
+                <FaReddit className="w-3 h-3" />
+                <span className="hidden sm:inline">RD</span>
+              </button>
+            </div>
+
+            {/* Мобильные контролы - компактные */}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={fetchData}
+                className="p-2 rounded-full dark:bg-[#1A1B26]/80 dark:border-white/5 border-slate-200 bg-white/70 hover:bg-blue-500 hover:text-white transition-all shadow-lg backdrop-blur-sm border"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+
+              <button 
+                onClick={toggleTheme}
+                className={`
+                  p-2 rounded-full 
+                  dark:bg-[#1A1B26]/80 dark:border-white/5 bg-white/70 border border-slate-200 
+                  backdrop-blur-sm shadow-md transition-all
+                  ${isFlickering ? 'animate-flicker' : ''}
+                `}
+              >
+                <div className={`
+                  w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] transition-colors duration-300
+                  ${isDark ? 'bg-yellow-500' : 'bg-blue-600'}
+                `}></div>
+              </button>
+            </div>
+          </div>
+
+          {/* Статус справа (Desktop) */}
+          <div className="hidden md:flex items-center gap-6 text-[10px] font-bold tracking-wider uppercase dark:text-slate-500 text-slate-400 justify-end">
             <div className="flex flex-col items-end">
               <span className="mb-0.5 opacity-70">Last refresh</span>
               <span className="dark:text-slate-300 text-slate-700 flex items-center gap-2">
@@ -376,30 +446,8 @@ export default function PulseKontrol() {
         </div>
       </header>
 
-      {/* Мобильные табы (дублируют функционал для маленьких экранов) */}
-      <div className="md:hidden flex px-4 mb-4 overflow-x-auto scrollbar-hide">
-        {[
-          { id: 'all', label: 'All' },
-          { id: 'hn', label: 'Hacker News' },
-          { id: 'gh', label: 'GitHub' },
-          { id: 'reddit', label: 'Reddit' }
-        ].map(tab => (
-          <button 
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-none px-4 py-2 text-xs font-bold uppercase tracking-wider mr-2 rounded-full transition-colors border ${
-              activeTab === tab.id 
-              ? 'bg-blue-600 text-white border-transparent shadow-lg shadow-blue-900/20' 
-              : 'dark:bg-[#1A1B26] bg-white/70 dark:text-slate-500 text-slate-600 dark:border-white/5 border-slate-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {/* Основной контент */}
-      <main className="px-4 md:px-10 pb-10 max-w-[1800px] mx-auto h-[calc(100vh-140px)] min-h-[600px]">
+      <main className="px-4 md:px-10 pb-4 md:pb-10 max-w-[1800px] mx-auto min-h-[calc(100vh-200px)] md:h-[calc(100vh-140px)] md:min-h-[600px] safe-area-bottom" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
         <div className={`grid grid-cols-1 gap-6 h-full transition-all duration-500
           ${activeTab === 'all' ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'}
         `}>
