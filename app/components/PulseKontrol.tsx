@@ -157,6 +157,7 @@ const AVAILABLE_SUBREDDITS = [
 
 export default function PulseKontrol() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(new Date()); // For UI updates
   const [hnStories, setHnStories] = useState<any[]>([]);
   const [ghRepos, setGhRepos] = useState<any[]>([]);
   const [redditPosts, setRedditPosts] = useState<any[]>([]);
@@ -181,6 +182,14 @@ export default function PulseKontrol() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Update current time every minute for "time ago" display
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
 
   const toggleTheme = () => {
     setIsFlickering(true); // Запускаем анимацию
@@ -209,8 +218,8 @@ export default function PulseKontrol() {
       );
       const ghData = await ghRes.json();
 
-      // Reddit
-      const redditRes = await fetch(`/api/reddit?subreddit=${selectedSubreddit}`);
+      // Reddit - direct client-side fetch to avoid 403 on Vercel
+      const redditRes = await fetch(`https://www.reddit.com/r/${selectedSubreddit}/hot.json?limit=15`);
       const redditData = await redditRes.json();
       const redditPosts = redditData.data?.children
         ?.map((child: any) => child.data)
@@ -411,7 +420,13 @@ export default function PulseKontrol() {
             <div className="flex flex-col items-end">
               <span className="mb-0.5 opacity-70">Last refresh</span>
               <span className="dark:text-slate-300 text-slate-700 flex items-center gap-2">
-                 {formatTimeAgo(lastRefresh).replace('minutes', 'min').replace('hours', 'h')}
+                 {(() => {
+                   const diff = Math.floor((currentTime.getTime() - lastRefresh.getTime()) / 1000);
+                   if (diff < 60) return 'just now';
+                   if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+                   if (diff < 86400) return `${Math.floor(diff / 3600)} h ago`;
+                   return `${Math.floor(diff / 86400)} days ago`;
+                 })()}
               </span>
             </div>
             
