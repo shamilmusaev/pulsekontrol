@@ -34,15 +34,54 @@ const flickerStyle = `
 
 // --- Компоненты UI ---
 
-const DashboardPanel = ({ title, subtitle, children, className = "" }: { title: string, subtitle: React.ReactNode, children: React.ReactNode, className?: string }) => (
+const DashboardPanel = ({ 
+  title, 
+  subtitle, 
+  children, 
+  className = "",
+  draggable = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  isDragging = false,
+  isDragOver = false,
+}: { 
+  title: string, 
+  subtitle: React.ReactNode, 
+  children: React.ReactNode, 
+  className?: string,
+  draggable?: boolean,
+  onDragStart?: (e: React.DragEvent) => void,
+  onDragOver?: (e: React.DragEvent) => void,
+  onDragLeave?: (e: React.DragEvent) => void,
+  onDrop?: (e: React.DragEvent) => void,
+  onDragEnd?: (e: React.DragEvent) => void,
+  isDragging?: boolean,
+  isDragOver?: boolean,
+}) => (
   <div className={`
     flex flex-col h-full
     rounded-3xl border shadow-2xl overflow-hidden transition-all duration-500
     dark:border-white/5 dark:bg-[#0F1016]/60 dark:backdrop-blur-md
     bg-white/70 border-slate-200 backdrop-blur-xl shadow-lg
+    ${isDragging ? 'opacity-50 scale-95' : ''}
+    ${isDragOver ? 'ring-2 ring-blue-500 scale-[1.02]' : ''}
     ${className}
   `}>
-    <div className="flex items-center justify-between px-6 py-5 border-b dark:border-white/5 border-slate-200/70">
+    <div 
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={`
+        flex items-center justify-between px-6 py-5 border-b dark:border-white/5 border-slate-200/70
+        ${draggable ? 'md:cursor-grab active:md:cursor-grabbing select-none' : ''}
+      `}
+    >
       <h2 className="text-sm font-bold tracking-widest dark:text-slate-100 text-slate-800 uppercase">{title}</h2>
       <div className="text-[10px] font-medium tracking-widest text-slate-500 uppercase">{subtitle}</div>
     </div>
@@ -174,6 +213,11 @@ export default function PulseKontrol() {
   const [isDark, setIsDark] = useState(true);
   const [isFlickering, setIsFlickering] = useState(false);
 
+  // Drag and Drop State
+  const [columnOrder, setColumnOrder] = useState<string[]>(['hn', 'gh', 'reddit']);
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+
   // Управление темой (исправлено)
   useEffect(() => {
     if (isDark) {
@@ -196,6 +240,47 @@ export default function PulseKontrol() {
     setIsDark(prev => !prev);
     // Убираем класс анимации через время, чтобы можно было кликнуть снова
     setTimeout(() => setIsFlickering(false), 600);
+  };
+
+  // Drag and Drop Handlers
+  const handleDragStart = (columnId: string) => {
+    setDraggedColumn(columnId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    setDragOverColumn(columnId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverColumn(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetColumnId: string) => {
+    e.preventDefault();
+    
+    if (!draggedColumn || draggedColumn === targetColumnId) {
+      setDraggedColumn(null);
+      setDragOverColumn(null);
+      return;
+    }
+
+    const newOrder = [...columnOrder];
+    const draggedIndex = newOrder.indexOf(draggedColumn);
+    const targetIndex = newOrder.indexOf(targetColumnId);
+
+    // Swap columns
+    newOrder[draggedIndex] = targetColumnId;
+    newOrder[targetIndex] = draggedColumn;
+
+    setColumnOrder(newOrder);
+    setDraggedColumn(null);
+    setDragOverColumn(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedColumn(null);
+    setDragOverColumn(null);
   };
 
   const fetchData = useCallback(async () => {
@@ -242,6 +327,147 @@ export default function PulseKontrol() {
     const interval = setInterval(fetchData, 3600000); // 1 hour = 3600000 ms
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  // Column configurations
+  const getColumnConfig = (columnId: string) => {
+    switch(columnId) {
+      case 'hn':
+        return {
+          id: 'hn',
+          title: 'Hacker News',
+          subtitle: 'Realtime',
+          content: loading ? (
+            [...Array(8)].map((_, i) => (
+              <div key={i} className="h-24 rounded-xl dark:bg-[#1A1B26]/50 bg-slate-100/70 animate-pulse mb-2" />
+            ))
+          ) : (
+            hnStories.map((story, index) => (
+              <ListItem 
+                key={story?.id || index}
+                rank={index + 1}
+                title={story?.title}
+                subtitle={getDomain(story?.url)}
+                isActive={index === 0}
+                type="hn"
+                url={story?.url || `https://news.ycombinator.com/item?id=${story?.id}`}
+                metadata={
+                  <>
+                    <span className="dark:text-blue-500 text-blue-700">{story?.score} points</span>
+                    <span className="dark:text-slate-400 text-slate-500">•</span>
+                    <span>{story?.descendants} comments</span>
+                    <span className="dark:text-slate-400 text-slate-500">•</span>
+                    <span>{formatTimeAgo(story?.time)}</span>
+                    <span className="dark:text-slate-400 text-slate-500 ml-1">by {story?.by}</span>
+                  </>
+                }
+              />
+            ))
+          )
+        };
+      case 'gh':
+        return {
+          id: 'gh',
+          title: 'Github',
+          subtitle: 'Trending',
+          content: loading ? (
+            [...Array(8)].map((_, i) => (
+              <div key={i} className="h-24 rounded-xl dark:bg-[#1A1B26]/50 bg-slate-100/70 animate-pulse mb-2" />
+            ))
+          ) : (
+            ghRepos.map((repo, index) => (
+              <ListItem 
+                key={repo.id}
+                rank={index + 1}
+                title={repo.full_name}
+                subtitle={repo.language || "Code"}
+                url={repo.html_url}
+                isActive={index === 0} 
+                type="github"
+                metadata={
+                  <>
+                    <span className="dark:text-white/80 text-slate-700">{repo.description || "No description provided"}</span>
+                    <div className="w-full flex items-center gap-3 mt-2 text-[11px] dark:text-slate-500 text-slate-600">
+                      <span className="flex items-center gap-1 dark:text-slate-400 text-slate-500">★ {repo.stargazers_count}</span>
+                      <span>•</span>
+                      <span>{formatTimeAgo(repo.created_at)}</span>
+                    </div>
+                  </>
+                }
+              />
+            ))
+          )
+        };
+      case 'reddit':
+        return {
+          id: 'reddit',
+          title: 'Reddit',
+          subtitle: (
+            <div className="relative">
+              <button 
+                onClick={() => setIsSubredditMenuOpen(!isSubredditMenuOpen)}
+                className="flex items-center gap-1 hover:text-orange-500 transition-colors cursor-pointer"
+              >
+                r/{selectedSubreddit}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              
+              {isSubredditMenuOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsSubredditMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-48 py-2 rounded-xl shadow-xl border dark:bg-[#1A1B26] bg-white dark:border-white/10 border-slate-200 z-50 max-h-64 overflow-y-auto custom-scrollbar">
+                    {AVAILABLE_SUBREDDITS.map(sub => (
+                      <button
+                        key={sub}
+                        onClick={() => {
+                          setSelectedSubreddit(sub);
+                          setIsSubredditMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-white/5 transition-colors
+                          ${selectedSubreddit === sub ? 'text-orange-500' : 'text-slate-500 dark:text-slate-400'}
+                        `}
+                      >
+                        r/{sub}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ),
+          content: loading ? (
+            [...Array(8)].map((_, i) => (
+              <div key={i} className="h-24 rounded-xl dark:bg-[#1A1B26]/50 bg-slate-100/70 animate-pulse mb-2" />
+            ))
+          ) : (
+            redditPosts.map((post, index) => (
+              <ListItem 
+                key={post.id}
+                rank={index + 1}
+                title={post.title}
+                subtitle={`u/${post.author}`}
+                url={`https://www.reddit.com${post.permalink}`}
+                isActive={index === 0} 
+                type="reddit"
+                metadata={
+                  <>
+                    <span className="dark:text-orange-500 text-orange-700">↑ {post.score}</span>
+                    <span className="dark:text-slate-400 text-slate-500">•</span>
+                    <span>{post.num_comments} comments</span>
+                    <span className="dark:text-slate-400 text-slate-500">•</span>
+                    <span>{formatTimeAgo(post.created_utc)}</span>
+                  </>
+                }
+              />
+            ))
+          )
+        };
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className={`min-h-screen min-h-[100dvh] w-full font-sans selection:bg-blue-500/30 relative transition-colors duration-500 ${isDark ? 'text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
@@ -467,150 +693,39 @@ export default function PulseKontrol() {
           ${activeTab === 'all' ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'}
         `}>
           
-          {/* Hacker News Panel */}
-          <div className={`
-            h-full transition-all duration-500 ease-in-out
-            ${activeTab === 'all' || activeTab === 'hn' ? 'block' : 'hidden'}
-          `}>
-            <DashboardPanel title="Hacker News" subtitle="Realtime">
-              {loading ? (
-                [...Array(8)].map((_, i) => (
-                  <div key={i} className="h-24 rounded-xl dark:bg-[#1A1B26]/50 bg-slate-100/70 animate-pulse mb-2" />
-                ))
-              ) : (
-                hnStories.map((story, index) => (
-                  <ListItem 
-                    key={story?.id || index}
-                    rank={index + 1}
-                    title={story?.title}
-                    subtitle={getDomain(story?.url)}
-                    isActive={index === 0} // Подсвечиваем первый элемент всегда
-                    type="hn"
-                    url={story?.url || `https://news.ycombinator.com/item?id=${story?.id}`}
-                    metadata={
-                      <>
-                        <span className="dark:text-blue-500 text-blue-700">{story?.score} points</span>
-                        <span className="dark:text-slate-400 text-slate-500">•</span>
-                        <span>{story?.descendants} comments</span>
-                        <span className="dark:text-slate-400 text-slate-500">•</span>
-                        <span>{formatTimeAgo(story?.time)}</span>
-                        <span className="dark:text-slate-400 text-slate-500 ml-1">by {story?.by}</span>
-                      </>
-                    }
-                  />
-                ))
-              )}
-            </DashboardPanel>
-          </div>
+          {/* Динамический рендеринг колонок в порядке из columnOrder */}
+          {columnOrder.map((columnId) => {
+            const config = getColumnConfig(columnId);
+            if (!config) return null;
 
-          {/* GitHub Panel */}
-          <div className={`
-            h-full transition-all duration-500 ease-in-out
-            ${activeTab === 'all' || activeTab === 'gh' ? 'block' : 'hidden'}
-          `}>
-            <DashboardPanel title="Github" subtitle="Trending">
-              {loading ? (
-                [...Array(8)].map((_, i) => (
-                  <div key={i} className="h-24 rounded-xl dark:bg-[#1A1B26]/50 bg-slate-100/70 animate-pulse mb-2" />
-                ))
-              ) : (
-                ghRepos.map((repo, index) => (
-                  <ListItem 
-                    key={repo.id}
-                    rank={index + 1}
-                    title={repo.full_name}
-                    subtitle={repo.language || "Code"}
-                    url={repo.html_url}
-                    isActive={index === 0} 
-                    type="github"
-                    metadata={
-                      <>
-                        <span className="dark:text-white/80 text-slate-700">{repo.description || "No description provided"}</span>
-                        <div className="w-full flex items-center gap-3 mt-2 text-[11px] dark:text-slate-500 text-slate-600">
-                          <span className="flex items-center gap-1 dark:text-slate-400 text-slate-500">★ {repo.stargazers_count}</span>
-                          <span>•</span>
-                          <span>{formatTimeAgo(repo.created_at)}</span>
-                        </div>
-                      </>
-                    }
-                  />
-                ))
-              )}
-            </DashboardPanel>
-          </div>
-
-          {/* Reddit Panel */}
-          <div className={`
-            h-full transition-all duration-500 ease-in-out
-            ${activeTab === 'all' || activeTab === 'reddit' ? 'block' : 'hidden'}
-          `}>
-            <DashboardPanel 
-              title="Reddit" 
-              subtitle={
-                <div className="relative">
-                  <button 
-                    onClick={() => setIsSubredditMenuOpen(!isSubredditMenuOpen)}
-                    className="flex items-center gap-1 hover:text-orange-500 transition-colors cursor-pointer"
-                  >
-                    r/{selectedSubreddit}
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                  
-                  {isSubredditMenuOpen && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setIsSubredditMenuOpen(false)}
-                      />
-                      <div className="absolute right-0 top-full mt-2 w-48 py-2 rounded-xl shadow-xl border dark:bg-[#1A1B26] bg-white dark:border-white/10 border-slate-200 z-50 max-h-64 overflow-y-auto custom-scrollbar">
-                        {AVAILABLE_SUBREDDITS.map(sub => (
-                          <button
-                            key={sub}
-                            onClick={() => {
-                              setSelectedSubreddit(sub);
-                              setIsSubredditMenuOpen(false);
-                            }}
-                            className={`w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-100 dark:hover:bg-white/5 transition-colors
-                              ${selectedSubreddit === sub ? 'text-orange-500' : 'text-slate-500 dark:text-slate-400'}
-                            `}
-                          >
-                            r/{sub}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              }
-            >
-              {loading ? (
-                [...Array(8)].map((_, i) => (
-                  <div key={i} className="h-24 rounded-xl dark:bg-[#1A1B26]/50 bg-slate-100/70 animate-pulse mb-2" />
-                ))
-              ) : (
-                redditPosts.map((post, index) => (
-                  <ListItem 
-                    key={post.id}
-                    rank={index + 1}
-                    title={post.title}
-                    subtitle={`u/${post.author}`}
-                    url={`https://www.reddit.com${post.permalink}`}
-                    isActive={index === 0} 
-                    type="reddit"
-                    metadata={
-                      <>
-                        <span className="dark:text-orange-500 text-orange-700">↑ {post.score}</span>
-                        <span className="dark:text-slate-400 text-slate-500">•</span>
-                        <span>{post.num_comments} comments</span>
-                        <span className="dark:text-slate-400 text-slate-500">•</span>
-                        <span>{formatTimeAgo(post.created_utc)}</span>
-                      </>
-                    }
-                  />
-                ))
-              )}
-            </DashboardPanel>
-          </div>
+            // Показываем колонку только если выбран 'all' или соответствующая вкладка
+            const isVisible = activeTab === 'all' || activeTab === columnId;
+            
+            return (
+              <div 
+                key={columnId}
+                className={`
+                  h-full transition-all duration-500 ease-in-out
+                  ${isVisible ? 'block' : 'hidden'}
+                `}
+              >
+                <DashboardPanel
+                  title={config.title}
+                  subtitle={config.subtitle}
+                  draggable={activeTab === 'all'} // Enable drag only in 'all' view
+                  onDragStart={() => handleDragStart(columnId)}
+                  onDragOver={(e) => handleDragOver(e, columnId)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, columnId)}
+                  onDragEnd={handleDragEnd}
+                  isDragging={draggedColumn === columnId}
+                  isDragOver={dragOverColumn === columnId}
+                >
+                  {config.content}
+                </DashboardPanel>
+              </div>
+            );
+          })}
 
         </div>
       </main>
