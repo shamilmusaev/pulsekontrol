@@ -47,6 +47,7 @@ const DashboardPanel = ({
   onDragEnd,
   isDragging = false,
   isDragOver = false,
+  theme = 'dark',
 }: { 
   title: string, 
   subtitle: React.ReactNode, 
@@ -60,42 +61,73 @@ const DashboardPanel = ({
   onDragEnd?: (e: React.DragEvent) => void,
   isDragging?: boolean,
   isDragOver?: boolean,
-}) => (
-  <div className={`
-    flex flex-col h-full
-    rounded-3xl border shadow-2xl overflow-hidden 
-    transition-all duration-200
-    will-change-transform
-    dark:border-white/5 dark:bg-[#0F1016]/60
-    bg-white/70 border-slate-200 shadow-lg
-    ${!isDragging && (draggable ? 'dark:backdrop-blur-md backdrop-blur-xl' : 'dark:backdrop-blur-md backdrop-blur-xl')}
-    ${isDragging ? 'opacity-40 scale-[0.98]' : ''}
-    ${isDragOver ? 'ring-2 ring-blue-500 brightness-110' : ''}
-    ${className}
-  `}>
-    <div 
-      draggable={draggable}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onDragEnd={onDragEnd}
-      className={`
-        flex items-center justify-between px-6 py-5 border-b dark:border-white/5 border-slate-200/70
-        transition-colors duration-150
-        ${draggable ? 'md:cursor-grab active:md:cursor-grabbing select-none hover:bg-white/5' : ''}
-      `}
-    >
-      <h2 className="text-sm font-bold tracking-widest dark:text-slate-100 text-slate-800 uppercase pointer-events-none">{title}</h2>
-      <div className="text-[10px] font-medium tracking-widest text-slate-500 uppercase pointer-events-none">{subtitle}</div>
-    </div>
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-1">
-      {children}
-    </div>
-  </div>
-);
+  theme?: 'light' | 'dark' | 'dewey',
+}) => {
+  // Определяем стили в зависимости от темы
+  const themeStyles = {
+    dewey: {
+      card: 'bg-[#211F2C]/90 border-[#333040] shadow-[0_0_30px_-10px_rgba(139,92,246,0.15)]',
+      headerBorder: 'border-[#333040]',
+      title: 'text-white',
+      subtitle: 'text-[#8B5CF6]', // Violet accent
+    },
+    light: {
+      card: 'bg-white/70 border-slate-200',
+      headerBorder: 'border-slate-200/70',
+      title: 'text-slate-800',
+      subtitle: 'text-slate-500',
+    },
+    dark: {
+      card: 'dark:bg-[#0F1016]/60 dark:border-white/5',
+      headerBorder: 'dark:border-white/5 border-slate-200/70',
+      title: 'dark:text-slate-100 text-slate-800',
+      subtitle: 'text-slate-500',
+    }
+  };
 
-const ListItem = ({ rank, title, subtitle, metadata, url, isActive, type = "neutral" }: { rank: number, title: string, subtitle: string, metadata: React.ReactNode, url: string, isActive: boolean, type?: string }) => {
+  const currentStyle = themeStyles[theme] || themeStyles.dark;
+
+  return (
+    <div className={`
+      flex flex-col h-full
+      rounded-3xl border shadow-2xl overflow-hidden 
+      transition-all duration-200
+      will-change-transform
+      backdrop-blur-xl
+      ${currentStyle.card}
+      shadow-lg
+      ${isDragging ? 'opacity-40 scale-[0.98]' : ''}
+      ${isDragOver ? 'ring-2 ring-blue-500 brightness-110' : ''}
+      ${className}
+    `}>
+      <div 
+        draggable={draggable}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onDragEnd={onDragEnd}
+        className={`
+          flex items-center justify-between px-6 py-5 border-b 
+          transition-colors duration-150
+          ${currentStyle.headerBorder}
+          ${draggable ? 'md:cursor-grab active:md:cursor-grabbing select-none hover:bg-white/5' : ''}
+        `}
+      >
+        <h2 className={`text-sm font-bold tracking-widest uppercase pointer-events-none ${currentStyle.title}`}>{title}</h2>
+        <div className={`text-[10px] font-medium tracking-widest uppercase pointer-events-none ${currentStyle.subtitle}`}>{subtitle}</div>
+      </div>
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-1">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const ListItem = ({ rank, title, subtitle, metadata, url, isActive, type = "neutral", theme = 'dark' }: { rank: number, title: string, subtitle: string, metadata: React.ReactNode, url: string, isActive: boolean, type?: string, theme?: 'light' | 'dark' | 'dewey' }) => {
+  // Стили для элемента списка в зависимости от темы
+  const isDewey = theme === 'dewey';
+  
   return (
     <a 
       href={url}
@@ -104,20 +136,29 @@ const ListItem = ({ rank, title, subtitle, metadata, url, isActive, type = "neut
       className={`
         group flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-xl transition-all duration-300
         relative overflow-hidden border
-        dark:hover:bg-white/[0.03] hover:bg-slate-100/70
+        ${isDewey 
+          ? 'hover:bg-[#2A2738] border-transparent hover:border-[#333040]' 
+          : 'dark:hover:bg-white/[0.03] hover:bg-slate-100/70 border-transparent'
+        }
         ${isActive 
           ? type === 'github'
-            ? 'dark:bg-white/[0.06] bg-white/80 border-white/20 shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)]'
+            ? isDewey 
+              ? 'bg-[#2A2738] border-[#8B5CF6]/30 shadow-[0_0_20px_-5px_rgba(139,92,246,0.2)]'
+              : 'dark:bg-white/[0.06] bg-white/80 border-white/20 shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)]'
             : type === 'reddit'
-              ? 'dark:bg-orange-500/[0.08] bg-orange-50/80 border-orange-500/30 shadow-[0_0_30px_-5px_rgba(249,115,22,0.15)]'
-              : 'dark:bg-blue-500/[0.08] bg-blue-50/80 border-blue-500/30 shadow-[0_0_30px_-5px_rgba(59,130,246,0.15)]' 
-          : 'border-transparent'}
+              ? isDewey
+                ? 'bg-[#2A2738] border-orange-500/30 shadow-[0_0_20px_-5px_rgba(249,115,22,0.2)]'
+                : 'dark:bg-orange-500/[0.08] bg-orange-50/80 border-orange-500/30 shadow-[0_0_30px_-5px_rgba(249,115,22,0.15)]'
+              : isDewey
+                ? 'bg-[#2A2738] border-blue-500/30 shadow-[0_0_20px_-5px_rgba(59,130,246,0.2)]'
+                : 'dark:bg-blue-500/[0.08] bg-blue-50/80 border-blue-500/30 shadow-[0_0_30px_-5px_rgba(59,130,246,0.15)]' 
+          : ''}
       `}
     >
       {/* Активный градиентный фон для выделенного элемента */}
       {isActive && (
         <div className={`absolute inset-0 bg-gradient-to-r ${
-          type === 'github' ? 'from-white/10' : 
+          type === 'github' ? (isDewey ? 'from-[#8B5CF6]/10' : 'from-white/10') : 
           type === 'reddit' ? 'from-orange-500/10' : 
           'from-blue-500/10'
         } to-transparent opacity-50 pointer-events-none`} />
@@ -128,11 +169,15 @@ const ListItem = ({ rank, title, subtitle, metadata, url, isActive, type = "neut
         flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold mt-0.5 z-10 transition-colors
         ${isActive 
           ? type === 'github'
-            ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]'
+            ? isDewey 
+              ? 'bg-[#8B5CF6] text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]'
+              : 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]'
             : type === 'reddit'
               ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]'
               : 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
-          : 'dark:bg-[#1A1B26] bg-slate-200/70 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'}
+          : isDewey
+            ? 'bg-[#2A2738] text-[#8B5CF6] group-hover:text-white'
+            : 'dark:bg-[#1A1B26] bg-slate-200/70 text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'}
       `}>
         {rank}
       </div>
@@ -143,17 +188,21 @@ const ListItem = ({ rank, title, subtitle, metadata, url, isActive, type = "neut
           text-[15px] font-medium leading-snug mb-1 truncate transition-colors
           ${isActive 
             ? type === 'github'
-              ? 'text-slate-900 dark:text-white'
+              ? isDewey ? 'text-white' : 'text-slate-900 dark:text-white'
               : type === 'reddit'
                 ? 'text-orange-700 dark:text-orange-50'
                 : 'text-blue-700 dark:text-blue-50' 
-            : 'text-slate-800 dark:text-slate-200 group-hover:text-black dark:group-hover:text-white'}
+            : isDewey
+              ? 'text-slate-200 group-hover:text-white'
+              : 'text-slate-800 dark:text-slate-200 group-hover:text-black dark:group-hover:text-white'}
         `}>
           {title}
         </h3>
         
         {/* Subtitle (Domain or Repo details) */}
-        <div className="text-[10px] font-bold tracking-wider text-slate-500 uppercase mb-2 truncate group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors">
+        <div className={`text-[10px] font-bold tracking-wider uppercase mb-2 truncate transition-colors
+          ${isDewey ? 'text-slate-500 group-hover:text-slate-400' : 'text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-400'}
+        `}>
           {subtitle}
         </div>
 
@@ -214,8 +263,11 @@ export default function PulseKontrol() {
   const [isSubredditMenuOpen, setIsSubredditMenuOpen] = useState(false);
 
   // Theme State
-  const [isDark, setIsDark] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'dewey'>('dark');
   const [isFlickering, setIsFlickering] = useState(false);
+  
+  // Сохраняем обратную совместимость для использования в других местах
+  const isDark = theme === 'dark' || theme === 'dewey';
 
   // Drag and Drop State
   const [columnOrder, setColumnOrder] = useState<string[]>(['hn', 'gh', 'reddit']);
@@ -226,20 +278,21 @@ export default function PulseKontrol() {
   const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
   const [touchEnd, setTouchEnd] = useState<{x: number, y: number} | null>(null);
 
-  // Управление темой (исправлено)
+  // Управление темой
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
       // Установить фон для safe areas в темной теме
-      document.documentElement.style.backgroundColor = '#08090F';
-      document.body.style.backgroundColor = '#08090F';
+      const bg = theme === 'dewey' ? '#15131D' : '#08090F';
+      document.documentElement.style.backgroundColor = bg;
+      document.body.style.backgroundColor = bg;
     } else {
       document.documentElement.classList.remove('dark');
       // Установить фон для safe areas в светлой теме
       document.documentElement.style.backgroundColor = '#f8fafc';
       document.body.style.backgroundColor = '#f8fafc';
     }
-  }, [isDark]);
+  }, [isDark, theme]);
 
   // Update current time every minute for "time ago" display
   useEffect(() => {
@@ -251,7 +304,13 @@ export default function PulseKontrol() {
 
   const toggleTheme = () => {
     setIsFlickering(true); // Запускаем анимацию
-    setIsDark(prev => !prev);
+    
+    setTheme(prev => {
+      if (prev === 'light') return 'dark';
+      if (prev === 'dark') return 'dewey';
+      return 'light';
+    });
+    
     // Убираем класс анимации через время, чтобы можно было кликнуть снова
     setTimeout(() => setIsFlickering(false), 600);
   };
@@ -429,6 +488,7 @@ export default function PulseKontrol() {
                 subtitle={getDomain(story?.url)}
                 isActive={index === 0}
                 type="hn"
+                theme={theme}
                 url={story?.url || `https://news.ycombinator.com/item?id=${story?.id}`}
                 metadata={
                   <>
@@ -463,6 +523,7 @@ export default function PulseKontrol() {
                 url={repo.html_url}
                 isActive={index === 0} 
                 type="github"
+                theme={theme}
                 metadata={
                   <>
                     <span className="dark:text-white/80 text-slate-700">{repo.description || "No description provided"}</span>
@@ -531,6 +592,7 @@ export default function PulseKontrol() {
                 url={`https://www.reddit.com${post.permalink}`}
                 isActive={index === 0} 
                 type="reddit"
+                theme={theme}
                 metadata={
                   <>
                     <span className="dark:text-orange-500 text-orange-700">↑ {post.score}</span>
@@ -547,7 +609,7 @@ export default function PulseKontrol() {
       default:
         return null;
     }
-  }, [loading, hnStories, ghRepos, redditPosts, selectedSubreddit, isSubredditMenuOpen]);
+  }, [loading, hnStories, ghRepos, redditPosts, selectedSubreddit, isSubredditMenuOpen, theme]);
 
   return (
     <div className={`min-h-screen min-h-[100dvh] w-full font-sans selection:bg-blue-500/30 relative transition-colors duration-500 ${isDark ? 'text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
@@ -555,9 +617,23 @@ export default function PulseKontrol() {
       <style>{flickerStyle}</style>
 
       {/* --- ФОН --- */}
-      {/* Темный фон (космический) */}
+      {/* Фон для темы Dewey (Deep Purple) */}
       <div 
-        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#15131D] transition-opacity duration-500 ${theme === 'dewey' ? 'opacity-100' : 'opacity-0'}`}
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          marginTop: 'calc(-1 * env(safe-area-inset-top))',
+          marginBottom: 'calc(-1 * env(safe-area-inset-bottom))',
+        }}
+      >
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vh] rounded-full bg-[#8B5CF6] opacity-[0.05] blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[0%] w-[40vw] h-[40vh] rounded-full bg-[#8B5CF6] opacity-[0.03] blur-[100px]" />
+      </div>
+
+      {/* Темный фон (космический) - стандартный Dark Mode */}
+      <div 
+        className={`fixed inset-0 z-[-1] pointer-events-none bg-[#08090F] transition-opacity duration-500 ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}
         style={{
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -573,7 +649,7 @@ export default function PulseKontrol() {
       
       {/* Светлый фон (глассморфизм) */}
       <div 
-        className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}
+        className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-500 ${theme === 'light' ? 'opacity-100' : 'opacity-0'}`}
         style={{
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -724,14 +800,24 @@ export default function PulseKontrol() {
                 onClick={toggleTheme}
                 className={`
                   p-2.5 rounded-full 
-                  dark:bg-[#1A1B26]/80 dark:border-white/5 bg-white/70 border border-slate-200 
-                  backdrop-blur-sm shadow-md transition-all
+                  border backdrop-blur-sm shadow-md transition-all
                   ${isFlickering ? 'animate-flicker' : ''}
+                  ${theme === 'dewey' 
+                    ? 'bg-[#211F2C]/80 border-[#8B5CF6]/30' 
+                    : theme === 'dark'
+                      ? 'bg-[#1A1B26]/80 border-white/5'
+                      : 'bg-white/70 border-slate-200'
+                  }
                 `}
               >
                 <div className={`
                   w-3 h-3 rounded-full shadow-[0_0_8px_currentColor] transition-colors duration-300
-                  ${isDark ? 'bg-yellow-500' : 'bg-blue-600'}
+                  ${theme === 'dewey' 
+                    ? 'bg-[#8B5CF6]' 
+                    : theme === 'dark'
+                      ? 'bg-yellow-500' 
+                      : 'bg-blue-600'
+                  }
                 `}></div>
               </button>
             </div>
@@ -759,24 +845,34 @@ export default function PulseKontrol() {
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
 
-            {/* Кнопка переключения темы (исправленная) */}
+            {/* Кнопка переключения темы */}
             <button 
               onClick={toggleTheme}
               className={`
                 flex items-center gap-2 px-3 py-1.5 rounded-full 
-                dark:bg-[#1A1B26]/80 dark:border-white/5 bg-white/70 border border-slate-200 
-                backdrop-blur-sm shadow-md transition-all hover:scale-105
+                border backdrop-blur-sm shadow-md transition-all hover:scale-105
                 ${isFlickering ? 'animate-flicker' : ''}
+                ${theme === 'dewey' 
+                  ? 'bg-[#211F2C]/80 border-[#8B5CF6]/30' 
+                  : theme === 'dark'
+                    ? 'bg-[#1A1B26]/80 border-white/5'
+                    : 'bg-white/70 border-slate-200'
+                }
               `}
             >
               {/* Индикатор "лампочка" */}
               <div className={`
                 w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] transition-colors duration-300
-                ${isDark ? 'bg-yellow-500 text-yellow-500' : 'bg-blue-600 text-blue-600'}
+                ${theme === 'dewey' 
+                  ? 'bg-[#8B5CF6] text-[#8B5CF6]' 
+                  : theme === 'dark'
+                    ? 'bg-yellow-500 text-yellow-500' 
+                    : 'bg-blue-600 text-blue-600'
+                }
               `}></div>
               
-              <span className="transition-colors duration-300 dark:text-slate-400 text-slate-600">
-                {isDark ? 'Dark' : 'Light'}
+              <span className={`transition-colors duration-300 ${theme === 'dewey' ? 'text-white' : theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                {theme === 'dewey' ? 'Dewey' : theme === 'dark' ? 'Dark' : 'Light'}
               </span>
             </button>
           </div>
@@ -822,6 +918,7 @@ export default function PulseKontrol() {
                   onDragEnd={handleDragEnd}
                   isDragging={draggedColumn === columnId}
                   isDragOver={dragOverColumn === columnId}
+                  theme={theme}
                 >
                   {config.content}
                 </DashboardPanel>
