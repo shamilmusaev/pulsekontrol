@@ -63,11 +63,14 @@ const DashboardPanel = ({
 }) => (
   <div className={`
     flex flex-col h-full
-    rounded-3xl border shadow-2xl overflow-hidden transition-all duration-500
-    dark:border-white/5 dark:bg-[#0F1016]/60 dark:backdrop-blur-md
-    bg-white/70 border-slate-200 backdrop-blur-xl shadow-lg
-    ${isDragging ? 'opacity-50 scale-95' : ''}
-    ${isDragOver ? 'ring-2 ring-blue-500 scale-[1.02]' : ''}
+    rounded-3xl border shadow-2xl overflow-hidden 
+    transition-all duration-200
+    will-change-transform
+    dark:border-white/5 dark:bg-[#0F1016]/60
+    bg-white/70 border-slate-200 shadow-lg
+    ${!isDragging && (draggable ? 'dark:backdrop-blur-md backdrop-blur-xl' : 'dark:backdrop-blur-md backdrop-blur-xl')}
+    ${isDragging ? 'opacity-40 scale-[0.98]' : ''}
+    ${isDragOver ? 'ring-2 ring-blue-500 brightness-110' : ''}
     ${className}
   `}>
     <div 
@@ -79,11 +82,12 @@ const DashboardPanel = ({
       onDragEnd={onDragEnd}
       className={`
         flex items-center justify-between px-6 py-5 border-b dark:border-white/5 border-slate-200/70
-        ${draggable ? 'md:cursor-grab active:md:cursor-grabbing select-none' : ''}
+        transition-colors duration-150
+        ${draggable ? 'md:cursor-grab active:md:cursor-grabbing select-none hover:bg-white/5' : ''}
       `}
     >
-      <h2 className="text-sm font-bold tracking-widest dark:text-slate-100 text-slate-800 uppercase">{title}</h2>
-      <div className="text-[10px] font-medium tracking-widest text-slate-500 uppercase">{subtitle}</div>
+      <h2 className="text-sm font-bold tracking-widest dark:text-slate-100 text-slate-800 uppercase pointer-events-none">{title}</h2>
+      <div className="text-[10px] font-medium tracking-widest text-slate-500 uppercase pointer-events-none">{subtitle}</div>
     </div>
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-1">
       {children}
@@ -242,21 +246,26 @@ export default function PulseKontrol() {
     setTimeout(() => setIsFlickering(false), 600);
   };
 
-  // Drag and Drop Handlers
-  const handleDragStart = (columnId: string) => {
+  // Drag and Drop Handlers (Optimized)
+  const handleDragStart = useCallback((columnId: string) => {
     setDraggedColumn(columnId);
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent, columnId: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent, columnId: string) => {
     e.preventDefault();
-    setDragOverColumn(columnId);
-  };
+    // Only update state if changed to avoid unnecessary re-renders
+    setDragOverColumn(prev => prev !== columnId ? columnId : prev);
+  }, []);
 
-  const handleDragLeave = () => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Prevent triggering when leaving child elements
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
     setDragOverColumn(null);
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent, targetColumnId: string) => {
+  const handleDrop = useCallback((e: React.DragEvent, targetColumnId: string) => {
     e.preventDefault();
     
     if (!draggedColumn || draggedColumn === targetColumnId) {
@@ -276,12 +285,12 @@ export default function PulseKontrol() {
     setColumnOrder(newOrder);
     setDraggedColumn(null);
     setDragOverColumn(null);
-  };
+  }, [draggedColumn, columnOrder]);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setDraggedColumn(null);
     setDragOverColumn(null);
-  };
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -328,8 +337,8 @@ export default function PulseKontrol() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Column configurations
-  const getColumnConfig = (columnId: string) => {
+  // Column configurations (Memoized)
+  const getColumnConfig = useCallback((columnId: string) => {
     switch(columnId) {
       case 'hn':
         return {
@@ -467,7 +476,7 @@ export default function PulseKontrol() {
       default:
         return null;
     }
-  };
+  }, [loading, hnStories, ghRepos, redditPosts, selectedSubreddit, isSubredditMenuOpen]);
 
   return (
     <div className={`min-h-screen min-h-[100dvh] w-full font-sans selection:bg-blue-500/30 relative transition-colors duration-500 ${isDark ? 'text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
